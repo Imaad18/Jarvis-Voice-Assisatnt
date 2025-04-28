@@ -8,16 +8,22 @@ import speech_recognition as sr
 
 st.markdown("""
     <style>
+    /* Global background settings */
     body {
         background-image: url('https://images.unsplash.com/photo-1604079628041-943cdece8a2f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1950&q=80') !important;
         background-size: cover !important;
         background-attachment: fixed !important;
+        background-position: center center !important;
     }
+    
+    /* Main app container */
     .stApp {
-        background-color: rgba(0,0,0,0.8) !important;
+        background-color: rgba(0,0,0,0.7) !important;
         border-radius: 20px !important;
         padding: 20px !important;
     }
+    
+    /* Button Styling */
     .stButton>button {
         background-color: #0a84ff !important;
         color: white !important;
@@ -31,20 +37,35 @@ st.markdown("""
         color: #ffffff !important;
         transform: scale(1.02) !important;
     }
+    
+    /* Block container (main content area) */
     .block-container {
         backdrop-filter: blur(8px) saturate(150%) !important;
         background-color: rgba(17, 25, 40, 0.55) !important;
         border-radius: 12px !important;
         padding: 2rem !important;
     }
+    
+    /* Headings */
     h1, h2, h3, h4, h5, h6 {
         color: #00ffff !important;
     }
+    
+    /* Text */
     p, label, span {
         color: #e0e0e0 !important;
     }
-    .stMarkdown {
-        color: #ffffff !important;
+    
+    /* Links (button-like style for links) */
+    .stLink a {
+        color: #00ffff !important;
+        font-size: 18px !important;
+        font-weight: bold !important;
+        text-decoration: none !important;
+    }
+    .stLink a:hover {
+        color: #0066cc !important;
+        text-decoration: underline !important;
     }
     </style>
 """, unsafe_allow_html=True)
