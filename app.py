@@ -3,107 +3,46 @@ import datetime
 import requests
 import webbrowser
 import time
-import random
 
-# Set page configuration
+# Page configuration
 st.set_page_config(
     page_title="Jarvis Assistant",
     page_icon="🤖",
-    layout="wide",
-    initial_sidebar_state="expanded",
+    layout="wide"
 )
 
-# Custom CSS for better UI
+# Basic styling
 st.markdown("""
 <style>
-    .main-title {
-        font-size: 3rem;
-        font-weight: bold;
-        color: #0066ff;
-        text-align: center;
-        margin-bottom: 1rem;
-        text-shadow: 1px 1px 2px #cccccc;
-    }
-    .subtitle {
-        font-size: 1.3rem;
-        color: #505050;
-        text-align: center;
-        margin-bottom: 2rem;
-    }
-    .response-box {
-        background-color: #f0f7ff;
-        border-radius: 15px;
-        padding: 15px;
-        margin: 10px 0;
-        border-left: 5px solid #0066ff;
-    }
-    .user-box {
-        background-color: #f5f5f5;
-        border-radius: 15px;
-        padding: 15px;
-        margin: 10px 0;
-        border-left: 5px solid #505050;
-    }
-    .stButton button {
-        background-color: #0066ff;
-        color: white;
-        font-weight: bold;
-        border-radius: 10px;
-        padding: 0.5rem 1rem;
-        border: none;
-        margin: 5px;
-        width: 100%;
-    }
-    .stButton button:hover {
-        background-color: #0055cc;
-    }
-    /* Make text inputs larger */
-    .stTextInput input {
-        font-size: 1.2rem;
-        padding: 1rem;
-        border-radius: 10px;
-    }
-    /* Style the sidebar */
-    .css-1d391kg {
-        background-color: #f0f7ff;
-    }
+    .main-header {text-align: center; font-size: 2.5rem; margin-bottom: 1rem;}
+    .tab-subheader {font-size: 1.5rem; margin-bottom: 1rem;}
+    .response-text {background-color: #f0f7ff; padding: 1rem; border-radius: 0.5rem; margin: 1rem 0;}
 </style>
 """, unsafe_allow_html=True)
 
-# Initialize session state variables
-if 'conversation' not in st.session_state:
-    st.session_state.conversation = []
-if 'greeting_done' not in st.session_state:
-    st.session_state.greeting_done = False
+# Initialize session state
+if 'responses' not in st.session_state:
+    st.session_state.responses = []
 if 'current_city' not in st.session_state:
     st.session_state.current_city = "Bahawalpur"
 
-# Function to add messages to conversation history
-def add_message(role, content):
-    st.session_state.conversation.append({"role": role, "content": content})
+# Header
+st.markdown("<h1 class='main-header'>JARVIS Assistant</h1>", unsafe_allow_html=True)
 
-# Function to speak (in web context, this just displays the message)
-def speak(text):
-    add_message("assistant", text)
-    return text
+# Function to get time
+def get_time():
+    current_time = datetime.datetime.now().strftime("%I:%M %p")
+    return f"The current time is {current_time}"
 
-# Function to open URL
-def open_url(url_to_open):
-    # Create a JavaScript script to open the URL in a new tab
-    js = f"""
-    <script>
-        window.open('{url_to_open}', '_blank').focus();
-    </script>
-    """
-    st.markdown(js, unsafe_allow_html=True)
-    return f"Opening {url_to_open}"
+# Function to get date
+def get_date():
+    current_date = datetime.datetime.now().strftime("%A, %B %d, %Y")
+    return f"Today is {current_date}"
 
-# Function to get weather information
+# Function to get weather
 def get_weather(city):
-    """Fetch and return weather information"""
     try:
-        # Use a free API key or store it securely
-        api_key = "47f5042f9812fe43a495b8daaf14ab5e"  # Your OpenWeatherMap API key
+        api_key = "47f5042f9812fe43a495b8daaf14ab5e"  # OpenWeatherMap API key
         base_url = "http://api.openweathermap.org/data/2.5/weather?"
         complete_url = f"{base_url}q={city}&appid={api_key}&units=metric"
         
@@ -115,252 +54,250 @@ def get_weather(city):
             weather_data = data["weather"][0]
             
             temp = main_data["temp"]
-            humidity = main_data["humidity"]
-            pressure = main_data["pressure"]
             description = weather_data["description"]
+            humidity = main_data["humidity"]
             
-            weather_info = (
-                f"Weather in {city}:\n"
-                f"• Temperature: {temp}°C\n"
-                f"• Weather: {description.capitalize()}\n"
-                f"• Humidity: {humidity}%\n"
-                f"• Atmospheric Pressure: {pressure} hPa"
-            )
-            return weather_info
+            return f"Weather in {city}: {description.capitalize()}, Temperature: {temp}°C, Humidity: {humidity}%"
         else:
-            return f"Sorry, I couldn't find weather data for {city}. Please try another city."
-    
+            return f"Could not find weather data for {city}"
     except Exception as e:
-        return f"Sorry, I encountered an error getting weather data: {str(e)}"
+        return f"Error fetching weather: {str(e)}"
 
-# Function to get current time
-def get_time():
-    current_time = datetime.datetime.now().strftime("%I:%M %p")
-    return f"The current time is {current_time}"
+# Function to open website
+def open_website(website_url):
+    try:
+        # This will open the URL in a new browser tab
+        webbrowser.open_new_tab(website_url)
+        return f"Opening {website_url}"
+    except Exception as e:
+        return f"Error opening website: {str(e)}"
 
-# Function to get current date
-def get_date():
-    current_date = datetime.datetime.now().strftime("%A, %B %d, %Y")
-    return f"Today is {current_date}"
-
-# Function to greet based on time of day
-def greet():
-    hour = datetime.datetime.now().hour
-    if 5 <= hour < 12:
-        greeting = "Good morning!"
-    elif 12 <= hour < 18:
-        greeting = "Good afternoon!"
-    else:
-        greeting = "Good evening!"
-    return f"{greeting} I'm Jarvis, your virtual assistant. How can I help you today?"
-
-# Process commands
+# Function to process voice commands
 def process_command(command):
-    # Convert command to lowercase for easier matching
     command = command.lower()
+    response = ""
     
-    # Time and date commands
-    if any(word in command for word in ["time", "clock"]):
-        return get_time()
+    # Time command
+    if "time" in command:
+        response = get_time()
     
-    elif any(word in command for word in ["date", "day", "today"]):
-        return get_date()
+    # Date command
+    elif "date" in command:
+        response = get_date()
     
-    # Weather commands
+    # Weather command
     elif "weather" in command:
         # Try to extract city name
         if "in " in command:
             parts = command.split("in ")
             if len(parts) > 1:
                 city = parts[1].strip()
-                st.session_state.current_city = city  # Save for future queries
-                return get_weather(city)
-        # Use default or previously mentioned city
-        return get_weather(st.session_state.current_city)
+                st.session_state.current_city = city
+                response = get_weather(city)
+            else:
+                response = get_weather(st.session_state.current_city)
+        else:
+            response = get_weather(st.session_state.current_city)
     
-    # Website commands - each will display a link and open a new tab
+    # Website commands
     elif "open google" in command:
-        return "Opening Google", "https://www.google.com"
+        open_website("https://www.google.com")
+        response = "Opening Google"
     elif "open youtube" in command:
-        return "Opening YouTube", "https://www.youtube.com"
+        open_website("https://www.youtube.com")
+        response = "Opening YouTube"
     elif "open facebook" in command:
-        return "Opening Facebook", "https://www.facebook.com"
+        open_website("https://www.facebook.com")
+        response = "Opening Facebook"
     elif "open instagram" in command:
-        return "Opening Instagram", "https://www.instagram.com"
-    elif "open twitter" in command or "open x" in command:
-        return "Opening Twitter", "https://www.twitter.com"
-    elif "open email" in command or "open gmail" in command:
-        return "Opening Gmail", "https://mail.google.com"
+        open_website("https://www.instagram.com")
+        response = "Opening Instagram"
+    elif "open twitter" in command:
+        open_website("https://www.twitter.com")
+        response = "Opening Twitter"
+    elif "open gmail" in command or "open email" in command:
+        open_website("https://mail.google.com")
+        response = "Opening Gmail"
     elif "open linkedin" in command:
-        return "Opening LinkedIn", "https://www.linkedin.com"
+        open_website("https://www.linkedin.com")
+        response = "Opening LinkedIn"
     elif "open github" in command:
-        return "Opening GitHub", "https://github.com"
-    elif "open chat" in command or "open gpt" in command:
-        return "Opening ChatGPT", "https://chat.openai.com"
+        open_website("https://github.com")
+        response = "Opening GitHub"
+    elif "open chatgpt" in command or "open chat" in command or "open gpt" in command:
+        open_website("https://chat.openai.com")
+        response = "Opening ChatGPT"
     elif "open edge" in command:
-        return "Opening Microsoft Edge", "https://www.microsoft.com/edge"
+        open_website("https://www.microsoft.com/edge")
+        response = "Opening Microsoft Edge"
     elif "watch anime" in command or "open aniwatch" in command:
-        return "Opening Aniwatch", "https://aniwatch.to"
+        open_website("https://aniwatch.to")
+        response = "Opening Aniwatch"
     elif "open streamlit" in command:
-        return "Opening Streamlit", "https://streamlit.io"
+        open_website("https://streamlit.io")
+        response = "Opening Streamlit"
     elif "generate images" in command or "open ideogram" in command:
-        return "Opening Ideogram", "https://ideogram.ai"
+        open_website("https://ideogram.ai")
+        response = "Opening Ideogram"
     
-    # Help command
-    elif "help" in command:
-        help_text = """
-        Here are some commands you can try:
-        
-        • "What time is it?" - Get the current time
-        • "What's today's date?" - Get the current date
-        • "What's the weather?" - Get weather for your city
-        • "What's the weather in [city]?" - Get weather for any city
-        • "Open [website]" - Open various websites like Google, YouTube, etc.
-        • "Help" - Show this help message
-        """
-        return help_text
-    
-    # General queries that would go to a desktop assistant
-    elif any(word in command for word in ["shutdown", "restart", "lock", "system"]):
-        return "I'm sorry, I can't perform system operations in a web browser. This feature is only available in the desktop version."
-    
-    # Exit or goodbye commands
-    elif any(word in command for word in ["bye", "exit", "quit", "goodbye"]):
-        return random.choice([
-            "Goodbye! It was nice assisting you. Refresh the page to start a new session.",
-            "Have a great day! Refresh the page when you need my assistance again.",
-            "Until next time! Refresh the page to start a new conversation."
-        ])
-    
-    # If no command matches
+    # Fallback response
     else:
-        return "I'm not sure how to respond to that. Try asking for 'help' to see what I can do."
+        response = "I don't understand that command. Please try again."
+    
+    st.session_state.responses.append(response)
+    return response
 
-# Main application layout
-st.markdown("<h1 class='main-title'>J.A.R.V.I.S</h1>", unsafe_allow_html=True)
-st.markdown("<p class='subtitle'>Just A Rather Very Intelligent System</p>", unsafe_allow_html=True)
+# Create tabs
+tab1, tab2, tab3, tab4 = st.tabs(["Main", "Time & Date", "Weather", "Websites"])
 
-# Create columns for the main layout
-col1, col2 = st.columns([2, 1])
-
-# Main conversation area
-with col1:
-    st.subheader("Conversation")
+# Tab 1: Main Command Interface
+with tab1:
+    st.markdown("<h2 class='tab-subheader'>Voice Assistant</h2>", unsafe_allow_html=True)
     
-    # Container for scrollable conversation history
-    chat_container = st.container()
+    # Command input
+    command_input = st.text_input("Enter your command:", placeholder="Try 'What's the time?' or 'Open YouTube'")
     
-    # Display conversation history
-    with chat_container:
-        for message in st.session_state.conversation:
-            if message["role"] == "user":
-                st.markdown(f"<div class='user-box'><strong>You:</strong> {message['content']}</div>", unsafe_allow_html=True)
-            else:
-                st.markdown(f"<div class='response-box'><strong>Jarvis:</strong> {message['content']}</div>", unsafe_allow_html=True)
+    if st.button("Execute Command"):
+        if command_input:
+            result = process_command(command_input)
+            st.markdown(f"<div class='response-text'><b>Command:</b> {command_input}<br><b>Response:</b> {result}</div>", unsafe_allow_html=True)
     
-    # If this is the first load, show greeting
-    if not st.session_state.greeting_done:
-        greeting_msg = greet()
-        speak(greeting_msg)
-        st.session_state.greeting_done = True
+    # Recent responses
+    st.markdown("<h3>Recent Responses</h3>", unsafe_allow_html=True)
+    for response in st.session_state.responses[-5:]:  # Show last 5 responses
+        st.markdown(f"<div class='response-text'>{response}</div>", unsafe_allow_html=True)
     
-    # Input area at the bottom
-    user_input = st.text_input("Type your command...", key="command_input", 
-                              placeholder="Try 'What's the weather?' or 'Open YouTube'")
-    
-    # Process user input when submitted
-    if st.button("Send", key="send_button"):
-        if user_input:
-            # Add user message to conversation
-            add_message("user", user_input)
-            
-            # Process the command
-            result = process_command(user_input)
-            
-            # Handle website openings (tuple returns)
-            if isinstance(result, tuple) and len(result) == 2:
-                message, url = result
-                speak(message)
-                st.markdown(f"<div class='response-box'><strong>Jarvis:</strong> <a href='{url}' target='_blank'>Click here to open {url}</a></div>", unsafe_allow_html=True)
-            else:
-                speak(result)
-            
-            # Clear the input box (this requires a rerun)
-            st.session_state.command_input = ""
-            st.experimental_rerun()
-
-# Sidebar with quick commands and info
-with col2:
-    st.sidebar.header("Quick Commands")
-    
-    # Time and Date
-    if st.sidebar.button("📅 Check Date"):
-        date_result = get_date()
-        speak(date_result)
+    if st.button("Clear History"):
+        st.session_state.responses = []
         st.experimental_rerun()
-        
-    if st.sidebar.button("⏰ Check Time"):
-        time_result = get_time()
-        speak(time_result)
-        st.experimental_rerun()
+
+# Tab 2: Time & Date
+with tab2:
+    st.markdown("<h2 class='tab-subheader'>Time & Date</h2>", unsafe_allow_html=True)
     
-    # Weather
-    st.sidebar.subheader("Weather")
-    weather_city = st.sidebar.text_input("City:", value=st.session_state.current_city)
-    if st.sidebar.button("🌤️ Check Weather"):
-        weather_result = get_weather(weather_city)
-        st.session_state.current_city = weather_city
-        speak(weather_result)
-        st.experimental_rerun()
-    
-    # Popular websites
-    st.sidebar.subheader("Quick Links")
-    col1, col2 = st.sidebar.columns(2)
+    col1, col2 = st.columns(2)
     
     with col1:
-        if st.button("Google"):
-            speak("Opening Google")
-            st.markdown(f"<div class='response-box'><a href='https://www.google.com' target='_blank'>Click to open Google</a></div>", unsafe_allow_html=True)
-            
-        if st.button("YouTube"):
-            speak("Opening YouTube")
-            st.markdown(f"<div class='response-box'><a href='https://www.youtube.com' target='_blank'>Click to open YouTube</a></div>", unsafe_allow_html=True)
-            
-        if st.button("Gmail"):
-            speak("Opening Gmail")
-            st.markdown(f"<div class='response-box'><a href='https://mail.google.com' target='_blank'>Click to open Gmail</a></div>", unsafe_allow_html=True)
+        if st.button("Get Current Time"):
+            time_result = get_time()
+            st.markdown(f"<div class='response-text'>{time_result}</div>", unsafe_allow_html=True)
     
     with col2:
-        if st.button("GitHub"):
-            speak("Opening GitHub")
-            st.markdown(f"<div class='response-box'><a href='https://github.com' target='_blank'>Click to open GitHub</a></div>", unsafe_allow_html=True)
-            
-        if st.button("ChatGPT"):
-            speak("Opening ChatGPT")
-            st.markdown(f"<div class='response-box'><a href='https://chat.openai.com' target='_blank'>Click to open ChatGPT</a></div>", unsafe_allow_html=True)
-            
-        if st.button("AniWatch"):
-            speak("Opening AniWatch")
-            st.markdown(f"<div class='response-box'><a href='https://aniwatch.to' target='_blank'>Click to open AniWatch</a></div>", unsafe_allow_html=True)
+        if st.button("Get Current Date"):
+            date_result = get_date()
+            st.markdown(f"<div class='response-text'>{date_result}</div>", unsafe_allow_html=True)
     
-    # Help section
-    st.sidebar.subheader("Need Help?")
-    if st.sidebar.button("Show Help"):
-        help_text = """
-        Here are some commands you can try:
+    # Current time display that auto-updates
+    st.markdown("<h3>Live Clock</h3>", unsafe_allow_html=True)
+    live_time = st.empty()
+    live_date = st.empty()
+    
+    # This will only update when the page refreshes or when a button is clicked
+    current_time = datetime.datetime.now().strftime("%I:%M:%S %p")
+    current_date = datetime.datetime.now().strftime("%A, %B %d, %Y")
+    
+    live_time.markdown(f"<div class='response-text'>Current Time: {current_time}</div>", unsafe_allow_html=True)
+    live_date.markdown(f"<div class='response-text'>Current Date: {current_date}</div>", unsafe_allow_html=True)
+
+# Tab 3: Weather
+with tab3:
+    st.markdown("<h2 class='tab-subheader'>Weather Information</h2>", unsafe_allow_html=True)
+    
+    city_input = st.text_input("Enter city name:", value=st.session_state.current_city)
+    
+    if st.button("Get Weather"):
+        if city_input:
+            st.session_state.current_city = city_input
+            weather_result = get_weather(city_input)
+            st.markdown(f"<div class='response-text'>{weather_result}</div>", unsafe_allow_html=True)
+    
+    # Quick city buttons
+    st.markdown("<h3>Quick Cities</h3>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        if st.button("Bahawalpur"):
+            weather_result = get_weather("Bahawalpur")
+            st.markdown(f"<div class='response-text'>{weather_result}</div>", unsafe_allow_html=True)
+    
+    with col2:
+        if st.button("Lahore"):
+            weather_result = get_weather("Lahore")
+            st.markdown(f"<div class='response-text'>{weather_result}</div>", unsafe_allow_html=True)
+    
+    with col3:
+        if st.button("Karachi"):
+            weather_result = get_weather("Karachi")
+            st.markdown(f"<div class='response-text'>{weather_result}</div>", unsafe_allow_html=True)
+
+# Tab 4: Websites
+with tab4:
+    st.markdown("<h2 class='tab-subheader'>Quick Website Access</h2>", unsafe_allow_html=True)
+    
+    # Create 3 columns
+    col1, col2, col3 = st.columns(3)
+    
+    # Column 1 - Social Media
+    with col1:
+        st.markdown("<h3>Social Media</h3>", unsafe_allow_html=True)
+        if st.button("Open YouTube"):
+            open_website("https://www.youtube.com")
+            st.success("Opening YouTube in a new tab")
         
-        • "What time is it?" - Get the current time
-        • "What's today's date?" - Get the current date
-        • "What's the weather?" - Get weather for your city
-        • "What's the weather in [city]?" - Get weather for any city
-        • "Open [website]" - Open various websites like Google, YouTube, etc.
-        • "Help" - Show this help message
-        """
-        speak(help_text)
-        st.experimental_rerun()
+        if st.button("Open Facebook"):
+            open_website("https://www.facebook.com")
+            st.success("Opening Facebook in a new tab")
+        
+        if st.button("Open Twitter"):
+            open_website("https://www.twitter.com")
+            st.success("Opening Twitter in a new tab")
+        
+        if st.button("Open Instagram"):
+            open_website("https://www.instagram.com")
+            st.success("Opening Instagram in a new tab")
     
-    # Clear conversation
-    if st.sidebar.button("🗑️ Clear Conversation"):
-        st.session_state.conversation = []
-        st.session_state.greeting_done = False
-        st.experimental_rerun()
+    # Column 2 - Work & Study
+    with col2:
+        st.markdown("<h3>Work & Study</h3>", unsafe_allow_html=True)
+        if st.button("Open Google"):
+            open_website("https://www.google.com")
+            st.success("Opening Google in a new tab")
+        
+        if st.button("Open Gmail"):
+            open_website("https://mail.google.com")
+            st.success("Opening Gmail in a new tab")
+        
+        if st.button("Open GitHub"):
+            open_website("https://github.com")
+            st.success("Opening GitHub in a new tab")
+        
+        if st.button("Open LinkedIn"):
+            open_website("https://www.linkedin.com")
+            st.success("Opening LinkedIn in a new tab")
+    
+    # Column 3 - Entertainment & Tools
+    with col3:
+        st.markdown("<h3>Entertainment & Tools</h3>", unsafe_allow_html=True)
+        if st.button("Open ChatGPT"):
+            open_website("https://chat.openai.com")
+            st.success("Opening ChatGPT in a new tab")
+        
+        if st.button("Open Aniwatch"):
+            open_website("https://aniwatch.to")
+            st.success("Opening Aniwatch in a new tab")
+        
+        if st.button("Open Streamlit"):
+            open_website("https://streamlit.io")
+            st.success("Opening Streamlit in a new tab")
+        
+        if st.button("Open Ideogram"):
+            open_website("https://ideogram.ai")
+            st.success("Opening Ideogram in a new tab")
+
+# Add a note about browser permissions
+st.markdown("""
+---
+**Note:** For website links to open properly:
+1. Make sure pop-up blockers are disabled for this site
+2. The app needs to be running locally (using `streamlit run app.py`) for the webbrowser functionality to work properly
+""")
