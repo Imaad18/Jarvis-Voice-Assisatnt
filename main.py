@@ -94,7 +94,54 @@ def get_weather():
         description = weather["description"]
         
         speak(f"The weather in {city} is {description}. The temperature is {temperature}°C with a pressure of {pressure} hPa and humidity of {humidity}%.")
-        
+
+# ====================== JOKES, QUOTES FUNCTIONS ======================
+def tell_joke():
+    """Tell a random joke"""
+    jokes = [
+        "Why don't scientists trust atoms? Because they make up everything!",
+        "Why was the math book sad? Because it had too many problems.",
+        "What do you call fake spaghetti? An impasta!",
+        "Tell me the first ten digits of your sister phone number!",
+        "Some Love one some love two. I love one that is you!."
+    ]
+    joke = random.choice(jokes)
+    speak(joke)
+
+def random_quote():
+    """Say a random motivational quote"""
+    quotes = [
+        "Believe you can and you're halfway there.",
+        "The only way to do great work is to love what you do.",
+        "Dream big and dare to fail.",
+        "Hardships often prepare ordinary people for an extraordinary destiny.",
+        "Success is not final, failure is not fatal: It is the courage to continue that counts."
+    ]
+    quote = random.choice(quotes)
+    speak(quote)
+
+def inspirational_quote():
+    """Say a random inspirational quote"""
+    inspirations = [
+        "Push yourself, because no one else is going to do it for you.",
+        "Great things never come from comfort zones.",
+        "Don't watch the clock; do what it does. Keep going.",
+        "It always seems impossible until it's done.",
+        "Success doesn’t just find you. You have to go out and get it."
+    ]
+    inspiration = random.choice(inspirations)
+    speak(inspiration)
+
+
+# ====================== IP Address ======================
+def get_ip_address():
+    """Get public IP"""
+    try:
+        ip = requests.get('https://api.ipify.org').text
+        speak(f"Your public IP address is {ip}")
+    except Exception as e:
+        speak("Sorry, I couldn't fetch the IP address.")
+
 # ====================== SYSTEM CONTROL FUNCTIONS ======================
 def shutdown_system():
     """Shutdown the computer"""
@@ -141,6 +188,15 @@ def main():
             get_time()
         elif 'date' in query:
             get_date()
+
+         # Jokes and Quotes
+        elif 'tell a joke' in query:
+            tell_joke()
+        elif 'random quote' in query:
+            random_quote()
+        elif 'inspirational quote' in query or 'motivation' in query:
+            inspirational_quote()
+
             
         # Weather Command (for Bahawalpur)
         elif 'weather' in query:
@@ -152,6 +208,10 @@ def main():
         elif 'unmute' in query:
             unmute()
 
+        # IP ADDRESS
+        elif 'what\'s my ip' in query or 'my ip address' in query:
+            get_ip_address()
+        
         # Website Commands (open with default browser)
         elif 'open google' in query:
             speak("Opening Google")
