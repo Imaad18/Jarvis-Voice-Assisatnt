@@ -4,8 +4,7 @@ import requests
 import time
 import speech_recognition as sr
 
-# ============ CUSTOM STYLING ============
-
+# ============ CUSTOM STYLING WITH ANIMATIONS ============
 st.markdown("""
     <style>
     /* Global background settings */
@@ -14,16 +13,18 @@ st.markdown("""
         background-size: cover !important;
         background-attachment: fixed !important;
         background-position: center center !important;
+        animation: fadeIn 2s ease-in-out; /* Fade-in effect for background */
     }
     
-    /* Main app container */
+    /* Main app container with animation */
     .stApp {
         background-color: rgba(0,0,0,0.7) !important;
         border-radius: 20px !important;
         padding: 20px !important;
+        animation: slideIn 1s ease-out; /* Slide-in animation */
     }
     
-    /* Button Styling */
+    /* Button Styling with hover animation */
     .stButton>button {
         background-color: #0a84ff !important;
         color: white !important;
@@ -31,29 +32,45 @@ st.markdown("""
         height: 3em !important;
         width: 100% !important;
         font-size: 18px !important;
+        transition: transform 0.3s ease; /* Smooth transition */
     }
     .stButton>button:hover {
         background-color: #0066cc !important;
         color: #ffffff !important;
-        transform: scale(1.02) !important;
+        transform: scale(1.05) !important; /* Button hover zoom */
     }
     
-    /* Block container (main content area) */
+    /* Keyframes for Fade-in Animation */
+    @keyframes fadeIn {
+        0% { opacity: 0; }
+        100% { opacity: 1; }
+    }
+
+    /* Keyframes for Slide-in Animation */
+    @keyframes slideIn {
+        0% { transform: translateY(30px); opacity: 0; }
+        100% { transform: translateY(0); opacity: 1; }
+    }
+    
+    /* Block container with backdrop effect */
     .block-container {
         backdrop-filter: blur(8px) saturate(150%) !important;
         background-color: rgba(17, 25, 40, 0.55) !important;
         border-radius: 12px !important;
         padding: 2rem !important;
+        animation: fadeIn 2s ease-out; /* Fade-in for block container */
     }
     
     /* Headings */
     h1, h2, h3, h4, h5, h6 {
         color: #00ffff !important;
+        animation: fadeIn 2s ease-in-out; /* Fade-in animation for headings */
     }
     
     /* Text */
     p, label, span {
         color: #e0e0e0 !important;
+        animation: fadeIn 2s ease-in-out; /* Fade-in for text */
     }
     
     /* Links (button-like style for links) */
