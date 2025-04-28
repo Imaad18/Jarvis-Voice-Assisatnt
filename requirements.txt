@@ -1,4 +1,6 @@
-streamlit
-requests
+streamlit==1.29.0
+datetime
+requests==2.31.0
 webbrowser
-streamlit-autorefresh
+streamlit-autorefresh==0.0.3
+python-dotenv==1.0.0
