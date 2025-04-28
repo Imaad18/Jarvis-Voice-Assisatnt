@@ -1,215 +1,164 @@
 import streamlit as st
 import datetime
 import requests
-import plotly.graph_objs as go
+import time
 import speech_recognition as sr
-import pyttsx3
-import geocoder
 
-# ====================== CONFIG ======================
-API_KEY = '47f5042f9812fe43a495b8daaf14ab5e'
-BASE_WEATHER_URL = "http://api.openweathermap.org/data/2.5/"
+# ============ CUSTOM STYLING ============
 
-# ====================== UTILITIES ======================
-def get_user_location():
-    """Auto-detect user's city using IP address."""
-    g = geocoder.ip('me')
-    if g.ok:
-        return g.city
+st.markdown("""
+    <style>
+    body {
+        background-image: url('https://images.unsplash.com/photo-1604079628041-943cdece8a2f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1950&q=80') !important;
+        background-size: cover !important;
+        background-attachment: fixed !important;
+    }
+    .stApp {
+        background-color: rgba(0,0,0,0.8) !important;
+        border-radius: 20px !important;
+        padding: 20px !important;
+    }
+    .stButton>button {
+        background-color: #0a84ff !important;
+        color: white !important;
+        border-radius: 8px !important;
+        height: 3em !important;
+        width: 100% !important;
+        font-size: 18px !important;
+    }
+    .stButton>button:hover {
+        background-color: #0066cc !important;
+        color: #ffffff !important;
+        transform: scale(1.02) !important;
+    }
+    .block-container {
+        backdrop-filter: blur(8px) saturate(150%) !important;
+        background-color: rgba(17, 25, 40, 0.55) !important;
+        border-radius: 12px !important;
+        padding: 2rem !important;
+    }
+    h1, h2, h3, h4, h5, h6 {
+        color: #00ffff !important;
+    }
+    p, label, span {
+        color: #e0e0e0 !important;
+    }
+    .stMarkdown {
+        color: #ffffff !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# ====================== WEATHER FUNCTION ======================
+def get_weather():
+    """Fetch weather information for Bahawalpur"""
+    city = "Bahawalpur"
+    api_key = '47f5042f9812fe43a495b8daaf14ab5e'  # Replace with your OpenWeatherMap API key
+    base_url = "http://api.openweathermap.org/data/2.5/weather?"
+    complete_url = f"{base_url}q={city}&appid={api_key}&units=metric"
+    
+    response = requests.get(complete_url)
+    data = response.json()
+    
+    if data["cod"] == "404":
+        return None
     else:
-        return "Bahawalpur"
-
-def get_current_weather(city: str) -> dict | None:
-    try:
-        url = f"{BASE_WEATHER_URL}weather?q={city}&appid={API_KEY}&units=metric"
-        response = requests.get(url)
-        data = response.json()
-        if data.get("cod") != 200:
-            return None
-
         main = data["main"]
         weather = data["weather"][0]
-
+        temperature = main["temp"]
+        pressure = main["pressure"]
+        humidity = main["humidity"]
+        description = weather["description"]
+        
         return {
             "city": city,
-            "description": weather["description"].capitalize(),
-            "temperature": main["temp"],
-            "pressure": main["pressure"],
-            "humidity": main["humidity"],
+            "description": description.capitalize(),
+            "temperature": temperature,
+            "pressure": pressure,
+            "humidity": humidity
         }
-    except:
-        return None
 
-def get_forecast(city: str) -> list[dict] | None:
-    try:
-        url = f"{BASE_WEATHER_URL}forecast?q={city}&appid={API_KEY}&units=metric&cnt=24"
-        response = requests.get(url)
-        data = response.json()
-
-        if data.get("cod") != "200":
-            return None
-
-        forecast = []
-        for item in data["list"][::8]:
-            forecast.append({
-                "date": datetime.datetime.fromtimestamp(item["dt"]).strftime("%A"),
-                "temp": item["main"]["temp"],
-                "description": item["weather"][0]["description"].capitalize(),
-            })
-        return forecast
-    except:
-        return None
-
-def get_current_datetime():
-    now = datetime.datetime.now()
-    date_today = now.strftime("%B %d, %Y")
-    time_now = now.strftime("%I:%M:%S %p")
-    return date_today, time_now
-
-def speak(text):
-    """Make Jarvis speak"""
-    engine = pyttsx3.init()
-    engine.setProperty('rate', 150)
-    engine.say(text)
-    engine.runAndWait()
-
-def listen():
-    """Listen to user's voice input"""
+# ====================== SPEECH FUNCTION ======================
+def listen_to_audio():
+    """Record audio and return the text input"""
     r = sr.Recognizer()
     with sr.Microphone() as source:
-        st.info("🎙️ Listening... Speak Now")
+        st.write("Listening... Speak now!")
         audio = r.listen(source)
-    try:
-        query = r.recognize_google(audio)
-        st.success(f"✅ You said: {query}")
-        return query.lower()
-    except sr.UnknownValueError:
-        st.error("Sorry, I didn't catch that.")
-        return ""
-    except sr.RequestError:
-        st.error("Speech service is down.")
-        return ""
+        try:
+            query = r.recognize_google(audio)
+            st.write(f"You said: {query}")
+        except sr.UnknownValueError:
+            st.error("Sorry, I couldn't understand the audio.")
+        except sr.RequestError:
+            st.error("Sorry, I couldn't reach the service.")
+    return query
 
-def process_voice_command(query, city):
-    """Process user's voice commands"""
-    if "weather" in query:
-        weather = get_current_weather(city)
-        if weather:
-            speak(f"The temperature in {city} is {weather['temperature']} degrees with {weather['description']}.")
-            st.info(f"Temperature: {weather['temperature']}°C, Condition: {weather['description']}")
-    elif "date" in query:
-        date_today, _ = get_current_datetime()
-        speak(f"Today's date is {date_today}")
-        st.success(f"📅 Today's Date: {date_today}")
-    elif "time" in query:
-        _, time_now = get_current_datetime()
-        speak(f"The current time is {time_now}")
-        st.success(f"⏰ Current Time: {time_now}")
-    elif "youtube" in query:
-        speak("Opening YouTube")
-        st.markdown("[Open YouTube](https://www.youtube.com)")
-    elif "google" in query:
-        speak("Opening Google")
-        st.markdown("[Open Google](https://www.google.com)")
-    else:
-        speak("Sorry, I don't understand that command.")
-        st.warning("Command not recognized.")
-
-# ====================== MAIN ======================
+# ====================== MAIN APP ======================
 def main():
-    st.set_page_config(page_title="Jarvis Web Assistant", page_icon="🤖", layout="wide")
-    st.title("🤖 Jarvis Web Assistant")
-
-    st.caption("Speak or click to interact with Jarvis Assistant.")
-
-    city = get_user_location()
-    st.info(f"📍 Auto-Detected Location: **{city}**")
-
-    theme = st.radio("Theme Mode:", ["Light", "Dark"], horizontal=True)
-    if theme == "Dark":
-        st.markdown("""
-            <style>body {background-color: #0e1117; color: #fafafa;}</style>
-        """, unsafe_allow_html=True)
-
-    tabs = st.tabs(["🌦️ Weather", "⏰ Date & Time", "🗣️ Voice Assistant", "🌐 Quick Links"])
-
+    st.set_page_config(page_title="Jarvis Web", layout="wide")
+    st.title("🤖 Jarvis - Your Web Assistant")
+    
+    tabs = st.tabs(["🌦️ Weather", "⏰ Date & Time", "🌐 Websites", "🎙️ Voice Input"])
+    
     # --- Weather Tab ---
     with tabs[0]:
-        st.header("🌦️ Live Weather")
-
-        weather = get_current_weather(city)
-        forecast = get_forecast(city)
-
+        st.header("Weather Information - Bahawalpur")
+        st.spinner("Fetching weather data...")
+        weather = get_weather()
+        time.sleep(2)  # Simulating the loading time
         if weather:
-            col1, col2, col3 = st.columns(3)
-            col1.metric("Temperature (°C)", f"{weather['temperature']}°C")
-            col2.metric("Pressure (hPa)", weather['pressure'])
-            col3.metric("Humidity (%)", weather['humidity'])
-            st.success(f"**Condition:** {weather['description']}")
+            st.metric(label="Temperature (°C)", value=f"{weather['temperature']}°C")
+            st.metric(label="Pressure (hPa)", value=weather['pressure'])
+            st.metric(label="Humidity (%)", value=weather['humidity'])
+            st.info(f"Condition: {weather['description']}")
         else:
-            st.error("Weather data unavailable.")
-
-        st.subheader("📅 3-Day Forecast")
-
-        if forecast:
-            forecast_days = [item["date"] for item in forecast]
-            forecast_temps = [item["temp"] for item in forecast]
-
-            fig = go.Figure(go.Scatter(
-                x=forecast_days,
-                y=forecast_temps,
-                mode='lines+markers',
-                marker=dict(color='cyan', size=10),
-                line=dict(color='royalblue', width=3)
-            ))
-            fig.update_layout(title="Temperature Trend (Next 3 Days)",
-                              xaxis_title="Day",
-                              yaxis_title="Temperature (°C)")
-            st.plotly_chart(fig, use_container_width=True)
-
+            st.error("Could not fetch weather data. Please check your API key.")
+    
     # --- Date & Time Tab ---
     with tabs[1]:
-        st.header("🗓️ Current Date and Time")
-        date_today, time_now = get_current_datetime()
-
+        st.header("Current Date and Time")
+        now = datetime.datetime.now()
+        date_today = now.strftime("%B %d, %Y")
+        time_now = now.strftime("%I:%M:%S %p")
+        
         st.subheader("📅 Date")
         st.success(date_today)
-
+        
         st.subheader("⏰ Time")
         st.success(time_now)
-
-    # --- Voice Assistant Tab ---
+    
+    # --- Websites Tab ---
     with tabs[2]:
-        st.header("🎙️ Voice Commands")
-        if st.button("🎤 Start Listening"):
-            query = listen()
-            if query:
-                process_voice_command(query, city)
-
-    # --- Quick Links Tab ---
+        st.header("Quick Access Websites")
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.link_button("🔍 Google", "https://www.google.com")
+            st.link_button("🎥 YouTube", "https://www.youtube.com")
+            st.link_button("📘 Facebook", "https://www.facebook.com")
+            st.link_button("📸 Instagram", "https://www.instagram.com")
+        
+        with col2:
+            st.link_button("🐦 Twitter", "https://www.twitter.com")
+            st.link_button("📧 Gmail", "https://mail.google.com")
+            st.link_button("🔗 LinkedIn", "https://www.linkedin.com")
+            st.link_button("🐙 GitHub", "https://github.com")
+        
+        with col3:
+            st.link_button("🧠 ChatGPT", "https://chat.openai.com")
+            st.link_button("🛡️ Microsoft Edge", "https://www.microsoft.com/edge")
+            st.link_button("🍿 Aniwatch", "https://aniwatch.to")
+            st.link_button("📈 Streamlit", "https://streamlit.io")
+            st.link_button("🖼️ Ideogram", "https://ideogram.ai")
+    
+    # --- Voice Input Tab ---
     with tabs[3]:
-        st.header("🌐 Quick Access Websites")
-        render_quick_links()
+        st.header("Voice Input")
+        if st.button("Activate Jarvis"):
+            st.write("Speak to Jarvis")
+            query = listen_to_audio()
+            st.write(f"Jarvis processed your query: {query}")
 
-def render_quick_links():
-    websites = {
-        "🔍 Google": "https://www.google.com",
-        "🎥 YouTube": "https://www.youtube.com",
-        "📘 Facebook": "https://www.facebook.com",
-        "📸 Instagram": "https://www.instagram.com",
-        "🐦 Twitter": "https://www.twitter.com",
-        "📧 Gmail": "https://mail.google.com",
-        "🔗 LinkedIn": "https://www.linkedin.com",
-        "🐙 GitHub": "https://github.com",
-        "🧠 ChatGPT": "https://chat.openai.com",
-        "🍿 Aniwatch": "https://aniwatch.to",
-        "📈 Streamlit": "https://streamlit.io",
-    }
-    cols = st.columns(3)
-    for idx, (name, url) in enumerate(websites.items()):
-        with cols[idx % 3]:
-            st.link_button(name, url)
-
-# ====================== ENTRY ======================
 if __name__ == "__main__":
     main()
