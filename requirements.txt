@@ -1,3 +1,2 @@
-streamlit>=1.25.0
-requests>=2.31.0
-streamlit-autorefresh>=0.0.4
+streamlit
+requests
