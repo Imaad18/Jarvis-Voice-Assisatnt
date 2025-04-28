@@ -83,6 +83,27 @@ if 'current_city' not in st.session_state:
 if 'last_command' not in st.session_state:
     st.session_state.last_command = ""
 
+# Website commands dictionary (moved to global scope)
+website_commands = {
+    "google": "https://www.google.com",
+    "youtube": "https://www.youtube.com",
+    "facebook": "https://www.facebook.com",
+    "instagram": "https://www.instagram.com",
+    "twitter": "https://www.twitter.com",
+    "gmail": "https://mail.google.com",
+    "email": "https://mail.google.com",
+    "linkedin": "https://www.linkedin.com",
+    "github": "https://github.com",
+    "chatgpt": "https://chat.openai.com",
+    "chat": "https://chat.openai.com",
+    "gpt": "https://chat.openai.com",
+    "edge": "https://www.microsoft.com/edge",
+    "aniwatch": "https://aniwatch.to",
+    "anime": "https://aniwatch.to",
+    "streamlit": "https://streamlit.io",
+    "ideogram": "https://ideogram.ai"
+}
+
 # Header
 st.markdown("<h1 class='main-header'>JARVIS Assistant</h1>", unsafe_allow_html=True)
 
@@ -99,7 +120,8 @@ def get_date():
 # Function to get weather with emoji based on conditions
 def get_weather(city):
     try:
-        api_key = "47f5042f9812fe43a495b8daaf14ab5e"  # OpenWeatherMap API key
+        # Use Streamlit secrets for API key (fallback to hardcoded if not available)
+        api_key = st.secrets.get("WEATHER_API_KEY", "47f5042f9812fe43a495b8daaf14ab5e")
         base_url = "http://api.openweathermap.org/data/2.5/weather?"
         complete_url = f"{base_url}q={city}&appid={api_key}&units=metric"
         
@@ -133,15 +155,20 @@ def get_weather(city):
     except Exception as e:
         return f"❌ Error fetching weather: {str(e)}"
 
-# Function to open website
+# Function to open website with better error handling
 def open_website(website_url):
     try:
-        # Open in new browser tab
+        # Try to open in new browser tab
         webbrowser.open_new_tab(website_url)
         return True
-    except Exception as e:
-        st.error(f"Failed to open website: {str(e)}")
-        return False
+    except webbrowser.Error:
+        try:
+            # Fallback to open in same tab
+            webbrowser.open(website_url, new=0)
+            return True
+        except Exception as e:
+            st.error(f"Failed to open website: {str(e)}")
+            return False
 
 # Function to process voice commands
 def process_command(command):
@@ -150,11 +177,11 @@ def process_command(command):
     action_performed = False
     
     # Time command
-    if "time" in command:
+    if "time" in command or "what time" in command:
         response = get_time()
     
     # Date command
-    elif "date" in command:
+    elif "date" in command or "what date" in command or "today" in command:
         response = get_date()
     
     # Weather command
@@ -172,26 +199,6 @@ def process_command(command):
             response = get_weather(st.session_state.current_city)
     
     # Website commands
-    website_commands = {
-        "google": "https://www.google.com",
-        "youtube": "https://www.youtube.com",
-        "facebook": "https://www.facebook.com",
-        "instagram": "https://www.instagram.com",
-        "twitter": "https://www.twitter.com",
-        "gmail": "https://mail.google.com",
-        "email": "https://mail.google.com",
-        "linkedin": "https://www.linkedin.com",
-        "github": "https://github.com",
-        "chatgpt": "https://chat.openai.com",
-        "chat": "https://chat.openai.com",
-        "gpt": "https://chat.openai.com",
-        "edge": "https://www.microsoft.com/edge",
-        "aniwatch": "https://aniwatch.to",
-        "anime": "https://aniwatch.to",
-        "streamlit": "https://streamlit.io",
-        "ideogram": "https://ideogram.ai"
-    }
-    
     for site, url in website_commands.items():
         if f"open {site}" in command:
             if open_website(url):
@@ -272,7 +279,7 @@ with tab1:
     if st.button("Clear History", key="clear_history"):
         st.session_state.responses = []
         st.session_state.last_command = ""
-        st.experimental_rerun()
+        st.rerun()
 
 # Tab 2: Time & Date
 with tab2:
