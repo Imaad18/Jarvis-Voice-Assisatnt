@@ -4,6 +4,11 @@ import requests
 import time
 import speech_recognition as sr
 
+# ====================== MAIN APP ======================
+
+# Set page config as the very first command in the script
+st.set_page_config(page_title="Jarvis Web", layout="wide")
+
 # ============ CUSTOM STYLING ============
 
 st.markdown("""
@@ -117,12 +122,9 @@ def listen_to_audio():
             st.error("Sorry, I couldn't reach the service.")
     return query
 
-# ====================== MAIN APP ======================
+# ====================== MAIN FUNCTION ======================
 
 def main():
-    # Set page config must be the first Streamlit command
-    st.set_page_config(page_title="Jarvis Web", layout="wide")
-
     st.title("🤖 Jarvis - Your Web Assistant")
     
     tabs = st.tabs(["🌦️ Weather", "⏰ Date & Time", "🌐 Websites", "🎙️ Voice Input"])
