@@ -1,13 +1,14 @@
 import streamlit as st
+
+# Set page config as the very first command in the script
+st.set_page_config(page_title="Jarvis Web", layout="wide")
+
 import datetime
 import requests
 import time
 import speech_recognition as sr
 
 # ====================== MAIN APP ======================
-
-# Set page config as the very first command in the script
-st.set_page_config(page_title="Jarvis Web", layout="wide")
 
 # ============ CUSTOM STYLING ============
 
